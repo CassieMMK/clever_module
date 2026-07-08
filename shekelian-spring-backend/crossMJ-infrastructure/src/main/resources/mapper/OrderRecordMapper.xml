@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.avalon.jpcap.infrastructure.mapper.OrderRecordMapper">
+    <resultMap id="resultMap" type="com.avalon.jpcap.repository.po.OrderPO">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="channel" property="channel" jdbcType="TINYINT"/>
+        <result column="finished" property="finished" jdbcType="TINYINT"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="amount" property="amount" jdbcType="INTEGER"/>
+        <result column="refund" property="refund" jdbcType="INTEGER"/>
+        <result column="ext_json" property="extJson" jdbcType="VARCHAR"/>
+        <result column="created" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="modified" property="modifiedTime" jdbcType="TIMESTAMP"/>
+        <result column="creator" property="creator" jdbcType="VARCHAR"/>
+        <result column="modifier" property="modifier" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List" >
+        id, user_id, channel, finished, status, amount, refund, ext_json,
+        created, modified, creator, modifier
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        insert into order_record (user_id, channel, finished, status, amount, refund, ext_json,
+                                     created, modified, creator, modifier)
+        values (#{userId} ,#{channel} ,#{finished}, #{status} , #{amount} ,#{refund}, #{extJson},
+                now(), now(), #{creator}, #{modifier})
+    </insert>
+
+    <select id="queryById" resultMap="resultMap">
+        select <include refid="Base_Column_List"/>
+        from order_record
+        <where>
+            id = #{id}
+            and
+            yn = 1
+        </where>
+    </select>
+
+    <!--根据id排序就是按照时间排序返回最早的-->
+    <select id="queryByUserIdAndCondition" resultMap="resultMap">
+        select <include refid="Base_Column_List"/>
+        from order_record
+        <where>
+            user_id = #{userId,jdbcType=BIGINT}
+            <if test="id != null">
+                and id = #{id,jdbcType=BIGINT},
+            </if>
+            <if test="finished != null">
+                and finished = #{finished,jdbcType=BOOLEAN}
+            </if>
+            <if test="status != null">
+                and status = #{status,jdbcType=TINYINT}
+            </if>
+            and
+            yn = 1
+        </where>
+        order by id desc
+    </select>
+
+    <update id="updateByUserIdAndId">
+        update order_record
+        <set>
+            <if test="finished != null">
+                finished = #{finished,jdbcType=BOOLEAN},
+            </if>
+            <if test="status != null">
+                status = #{status,jdbcType=TINYINT},
+            </if>
+            <if test="amount != null">
+                amount = #{amount,jdbcType=INTEGER},
+            </if>
+            <if test="refund != null">
+                refund = #{refund,jdbcType=INTEGER},
+            </if>
+            <if test="modifier != null and modifier != ''">
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+            modified = now()
+        </set>
+        <where>
+            userId = #{userId}
+            and
+            id = #{id}
+        </where>
+    </update>
+
+
+</mapper>

@@ -1,0 +1,140 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!--本地保存日志-->
+<configuration>
+    <!--  配置占位符  -->
+    <Properties>
+        <!-- 日志保存路径 -->
+        <Property name="log.path">/www/wwwlogs</Property>
+        <Property name="log.env">$${prop:sweet.env:-production}</Property>
+        <Property name="log.includeLocation">$${prop:sweet.includeLocation:-false}</Property>
+        <Property name="log.level">$${prop:sweet.level:-info}</Property>
+        <Property name="log.rpc.rate">$${prop:sweet.rpc.rate:-10}</Property>
+        <Property name="log.rpc.maxBurst">$${prop:sweet.rpc.maxBurst:-10}</Property>
+        <Property name="log.sizeMB">$${prop:sweet.sizeMB:-1024MB}</Property>
+        <Property name="log.rolloverMax">$${prop:sweet.rolloverMax:-10}</Property>
+        <!--    日志格式(完整)    -->
+        <Property name="log.pattern.intact">%d %t %-4p [%X{traceId}:%X{pTraceId}] %X{X-operator} %c{1} %L - %m%n
+        </Property>
+        <!-- 格式：天、时间、traceId、操作人operator (压缩) -->
+        <Property name="log.pattern.compact">%d %t %-4p %X{X-trace-id} [%X{traceId}:%X{pTraceId}] %X{X-operator} %c{1} %L -
+            %maxLen{%m}{$${prop:sweet.compact.maxLen:-10240}}%ex{$${prop:sweet.compact.maxEx:-5}}%n
+        </Property>
+    </Properties>
+
+    <!-- appender表示,定义日志记录规则 -->
+    <Appenders>
+        <!-- 控制台日志 -->
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="${log.pattern.intact}"/>
+        </Console>
+
+        <!-- 所有日志 -->
+        <RollingFile name="ALL" fileName="${log.path}/all.log"
+                     filePattern="${log.path}/$${date:yyyy-MM}/all.%d{yyyy-MM-dd}-%i.log"
+                     immediateFlush="false">
+            <PatternLayout pattern="${log.pattern.compact}"/>
+            <!--policy用于实现日志文件滚动更新的策略，例如日志达到一定大小或时间周期，对原日志进行压缩归档，再开一个新的log文件继续写入-->
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${log.sizeMB}"/>
+            </Policies>
+            <!--DefaultRolloverStrategy 指定默认的滚动策略，不指定时默认为 7 ，当计数器达到最大值，会删除旧的归档log文件。
+            即： 可控制一定时间范围内归档的日志文件的最大个数-->
+            <DefaultRolloverStrategy max="${log.rolloverMax}"/>
+        </RollingFile>
+
+        <!-- 错误日志 -->
+        <RollingFile name="ERROR" fileName="${log.path}/error.log"
+                     filePattern="${log.path}/$${date:yyyy-MM}/error.%d{yyyy-MM-dd}-%i.log"
+                     immediateFlush="true">
+            <!--默认不配置ThresholdFilter时，记录的是info、warn、error、fatal级别的日志。-->
+            <!--onMatch=ACCEPT 不需要走后面的过滤器，记录日志；  onMisMatch=DENY 不需要记录此日志-->
+            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="${log.pattern.intact}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${log.sizeMB}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${log.rolloverMax}"/>
+        </RollingFile>
+
+        <!-- RPC日志 -->
+        <RollingFile name="RPC" fileName="${log.path}/rpc.log"
+                     filePattern="${log.path}/$${date:yyyy-MM}/rpc.%d{yyyy-MM-dd}-%i.log"
+                     immediateFlush="false">
+            <BurstFilter level="${log.level}" rate="${log.rpc.rate}" maxBurst="${log.rpc.maxBurst}"/>
+            <PatternLayout pattern="${log.pattern.intact}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${log.sizeMB}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${log.rolloverMax}"/>
+        </RollingFile>
+
+        <!-- 业务日志 -->
+        <RollingFile name="BIZ" fileName="${log.path}/biz.log"
+                     filePattern="${log.path}/$${date:yyyy-MM}/biz.%d{yyyy-MM-dd}-%i.log"
+                     immediateFlush="false">
+            <PatternLayout pattern="${log.pattern.intact}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${log.sizeMB}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${log.rolloverMax}"/>
+        </RollingFile>
+    </Appenders>
+
+    <!-- Logger节点用来单独指定日志的形式，比如为指定包下的class指定不同的日志级别等 -->
+    <Loggers>
+        <AsyncLogger name="BIZ" level="${log.level}" additivity="false" includeLocation="${log.includeLocation}">
+            <!--appenderRef 指定日志输出到哪个appender，没有的话，就默认输出到ROOT。 ps：即使指定了则也会在ROOT中输出一份-->
+            <AppenderRef ref="STDOUT"/>
+            <AppenderRef ref="BIZ"/>
+        </AsyncLogger>
+        <AsyncLogger name="RPC" level="${log.level}" additivity="false" includeLocation="${log.includeLocation}">
+            <AppenderRef ref="STDOUT"/>
+            <AppenderRef ref="RPC"/>
+            <AppenderRef ref="ALL"/>
+            <AppenderRef ref="ERROR"/>
+        </AsyncLogger>
+        <AsyncRoot level="${log.level}" includeLocation="${log.includeLocation}">
+            <AppenderRef ref="STDOUT"/>
+            <AppenderRef ref="ALL"/>
+            <AppenderRef ref="ERROR"/>
+        </AsyncRoot>
+    </Loggers>
+</configuration>
+
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+<!--上传日志到腾讯云cls-->
+<!--<Configuration status="WARN">-->
+<!--    <Appenders>-->
+<!--        <Loghub name="Loghub"-->
+<!--                topicId="${log.topicId}"-->
+<!--                endpoint="ap-guangzhou.cls.tencentcs.com"-->
+<!--                accessKeyId="${log.accessKeyId}"-->
+<!--                accessKeySecret="${log.accessKeySecret}"-->
+<!--                totalSizeInBytes="104857600"-->
+<!--                maxBlockMs="0"-->
+<!--                sendThreadCount="8"-->
+<!--                batchSizeThresholdInBytes="524288"-->
+<!--                batchCountThreshold="4096"-->
+<!--                lingerMs="2000"-->
+<!--                retries="10"-->
+<!--                baseRetryBackoffMs="100"-->
+<!--                maxRetryBackoffMs="100"-->
+<!--                source=""-->
+<!--                timeFormat="yyyy-MM-dd'T'HH:mmZ"-->
+<!--                timeZone="UTC"-->
+<!--                ignoreExceptions="true"-->
+<!--                mdcFields="THREAD_ID1">-->
+<!--            <PatternLayout-->
+<!--                    pattern="%d{HH:mm:ss.SSS} %-5level %class{36} %L %M - %msg%xEx"/>-->
+<!--        </Loghub>-->
+<!--    </Appenders>-->
+<!--    <Loggers>-->
+<!--        <Root level="warn">-->
+<!--            <AppenderRef ref="Loghub"/>-->
+<!--        </Root>-->
+<!--    </Loggers>-->
+<!--</Configuration>-->

@@ -1,0 +1,10 @@
+﻿# 运行说明
+
+1. Python 3.10+，安装依赖：`pip install -r requirements.txt`
+2. 复制 `.env.example` 为 `.env`，填写 `ALIYUN_API_KEY`
+3. 将 Excel 放入 `import_xlsx/`，或 `.env` 中设置 `AGENT_DATA_DIR` 指向 `E:\计设\数据\建表与数据导入`
+4. 启动 Agent API：`python run_api.py`（默认 5001）
+5. 启动 MCP（可选）：`python run_mcp.py`（默认 5000，路径 `/mcp`）
+6. 前端 `E:\计设\app`：`npm install` 后 `npm run serve`，访问 `/AgentChat`
+
+MySQL 迁移：见各模块顶部注释。

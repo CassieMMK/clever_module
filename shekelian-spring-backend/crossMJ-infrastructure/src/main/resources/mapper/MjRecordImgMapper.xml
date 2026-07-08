@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.avalon.jpcap.infrastructure.mapper.MjRecordImgMapper">
+    <resultMap id="resultMap" type="com.avalon.jpcap.repository.po.MjRecordImgPO">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="father_id" property="fatherId" jdbcType="BIGINT"/>
+        <result column="child_img_index" property="childImgIndex" jdbcType="TINYINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="stream_message_id" property="messageId" jdbcType="VARCHAR"/>
+        <result column="mj_account" property="mjAccount" jdbcType="VARCHAR"/>
+        <result column="img_url_outer" property="imgUrlOuter" jdbcType="VARCHAR"/>
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR"/>
+        <result column="discord_type" property="type" jdbcType="TINYINT"/>
+        <result column="used" property="used" jdbcType="BOOLEAN"/>
+        <result column="ext_json" property="extJson" jdbcType="VARCHAR"/>
+        <result column="created" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="modified" property="modifiedTime" jdbcType="TIMESTAMP"/>
+        <result column="creator" property="creator" jdbcType="VARCHAR"/>
+        <result column="modifier" property="modifier" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List" >
+        id, father_id, child_img_index ,user_id, stream_message_id, mj_account, img_url_outer, img_url, discord_type, used,ext_json,
+        created, modified, creator, modifier
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        insert into user_img_record (father_id, child_img_index, user_id, stream_message_id, mj_account, img_url_outer, img_url, discord_type, used, ext_json,
+                                 created, modified, creator, modifier)
+        values (#{fatherId} ,#{childImgIndex} ,#{userId}, #{messageId} , #{mjAccount} ,#{imgUrlOuter}, #{imgUrl}, #{type}, #{used}, #{extJson},
+                now(), now(), #{creator}, #{modifier})
+    </insert>
+
+    <select id="queryById" resultMap="resultMap">
+        select <include refid="Base_Column_List"/>
+        from user_img_record
+        <where>
+            id = #{id}
+            and
+            yn = 1
+        </where>
+    </select>
+
+    <!--根据id排序就是按照时间排序返回最早的-->
+    <select id="queryByCondition" resultMap="resultMap">
+        select <include refid="Base_Column_List"/>
+        from user_img_record
+        <where>
+            user_id = #{userId,jdbcType=BIGINT}
+            and
+            yn = 1
+            and
+            stream_message_id = #{messageId}
+            <if test="used !=null">
+                and used = #{used}
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+    <update id="updateById">
+        update user_img_record
+        <set>
+            <if test="used != null">
+                used = #{used},
+            </if>
+            <if test="imgUrlOuter != null and imgUrlOuter != ''">
+                img_url_outer = #{imgUrlOuter},
+            </if>
+            <if test="imgUrl != null and imgUrl != ''">
+                img_url = #{imgUrl},
+            </if>
+            <if test="type != null">
+                discord_type = #{type},
+            </if>
+            <if test="used != null">
+                used = #{used},
+            </if>
+            <if test="modifier != null and modifier != ''">
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+            modified = now()
+        </set>
+        <where>
+            id = #{id}
+        </where>
+    </update>
+
+    <update id="updateByIdList" parameterType="list">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            update user_img_record
+            <set>
+                <if test="item.used != null">
+                    used = #{item.used,jdbcType=BOOLEAN},
+                </if>
+                <if test="item.imgUrlOuter != null and item.imgUrlOuter != ''">
+                    img_url_outer = #{item.imgUrlOuter,jdbcType=VARCHAR},
+                </if>
+                <if test="item.imgUrl != null and item.imgUrl != ''">
+                    img_url = #{item.imgUrl,jdbcType=VARCHAR},
+                </if>
+                <if test="item.type != null">
+                    discord_type = #{item.type,jdbcType=INTEGER},
+                </if>
+                <if test="item.modifier != null and item.modifier != ''">
+                    modifier = #{item.modifier,jdbcType=VARCHAR},
+                </if>
+                modified = now()
+            </set>
+            <where>
+                id = #{item.id}
+            </where>
+        </foreach>
+    </update>
+
+
+</mapper>

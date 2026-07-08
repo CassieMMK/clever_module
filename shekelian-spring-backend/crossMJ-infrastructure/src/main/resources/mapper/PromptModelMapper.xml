@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.avalon.jpcap.infrastructure.mapper.PromptModelMapper">
+    <resultMap id="resultMap" type="com.avalon.jpcap.repository.po.PromptModelPO">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="prompt" property="prompt" jdbcType="VARCHAR"/>
+        <result column="model_img" property="modelImgUrl" jdbcType="VARCHAR"/>
+        <result column="used_times" property="usedTimes" jdbcType="INTEGER"/>
+        <result column="like_times" property="likeTimes" jdbcType="INTEGER"/>
+        <result column="ext_json" property="extJson" jdbcType="VARCHAR"/>
+        <result column="created" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="modified" property="modifiedTime" jdbcType="TIMESTAMP"/>
+        <result column="creator" property="creator" jdbcType="VARCHAR"/>
+        <result column="modifier" property="modifier" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List" >
+        id, user_id, prompt, model_img, used_times, like_times, ext_json,
+        created, modified, creator, modifier
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        insert into prompt_model (user_id, prompt, model_img, used_times, like_times, ext_json,
+                                         created, modified, creator, modifier)
+        values (#{userId},#{prompt}, #{modelImgUrl}, #{usedTimes}, #{likeTimes}, #{extJson},
+                now(), now(), #{creator}, #{modifier})
+    </insert>
+
+    <select id="queryById" resultMap="resultMap">
+        select <include refid="Base_Column_List"/>
+        from prompt_model
+        <where>
+            id = #{id}
+            and
+            yn = 1
+        </where>
+    </select>
+
+    <!--根据排序查询,
+    用<where>标签，当if语句user_id没有时，也会自动去掉yn前面的and-->
+    <select id="queryPageByRank" resultMap="resultMap">
+        select <include refid="Base_Column_List"/>
+        from prompt_model
+        <where>
+            <if test="userId !=null">
+                user_id = #{userId,jdbcType=BIGINT}
+            </if>
+            and
+            yn = 1
+        </where>
+        <!--使用次数和喜爱次数2选1-->
+        <if test="usedTimesRank != null and usedTimesRank == true">
+            order by used_times desc
+        </if>
+        <if test="likeTimesRank !=null and likeTimesRank == true">
+            order by like_times desc
+        </if>
+        <!--都没有时默认按照id逆序排列-->
+        <if test="userTimesRank == false and likeTimesRank == false">
+            order by id desc
+        </if>
+    </select>
+
+
+
+    <update id="updateById">
+        update prompt_model
+        <set>
+            <if test="usedTimes != null">
+                used_times = #{usedTimes,jdbcType=INTEGER},
+            </if>
+            <if test="likeTimes != null">
+                like_times = #{likeTimes,jdbcType=INTEGER},
+            </if>
+            <if test="prompt != null and prompt != ''">
+                prompt = #{prompt,jdbcType=VARCHAR},
+            </if>
+            modified = now(),
+            <if test="modifier != null and modifier != ''">
+                modifier = #{modifier,jdbcType=VARCHAR}
+            </if>
+        </set>
+        <where>
+            id = #{id}
+            and
+            yn = 1
+        </where>
+    </update>
+
+</mapper>

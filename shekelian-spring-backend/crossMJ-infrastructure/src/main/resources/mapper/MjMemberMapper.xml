@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.avalon.jpcap.infrastructure.mapper.MjMemberMapper">
+    <resultMap id="resultMap" type="com.avalon.jpcap.repository.po.MjMemberPO">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="member_Level" property="memberLevel" jdbcType="INTEGER"/>
+        <result column="is_activate" property="isActivate" jdbcType="TINYINT"/>
+        <result column="credit" property="credit" jdbcType="INTEGER"/>
+        <result column="expire_time" property="expireTime" jdbcType="TIMESTAMP"/>
+        <result column="created" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="modified" property="modifiedTime" jdbcType="TIMESTAMP"/>
+        <result column="creator" property="creator" jdbcType="VARCHAR"/>
+        <result column="modifier" property="modifier" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List" >
+        id, user_id, member_level, is_activate, credit, expire_time,
+        created, modified, creator, modifier
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        insert into member_info (user_id, member_level, is_activate, credit, expire_time,
+                                         created, modified, creator, modifier)
+        values (#{userId},#{memberLevel}, #{isActivate}, #{credit}, #{expireTime},
+                now(), now(), #{creator}, #{modifier})
+    </insert>
+
+    <select id="queryByUserId" resultMap="resultMap">
+        select <include refid="Base_Column_List"/>
+        from member_info
+        <where>
+            user_id = #{userId,jdbcType=BIGINT}
+            and
+            yn = 1
+        </where>
+    </select>
+
+    <update id="update">
+        update member_info
+        <set>
+            <if test="memberLevel != null">
+                member_level = #{memberLevel,jdbcType=INTEGER},
+            </if>
+            <if test="isActivate != null">
+                is_activate = #{isActivate,jdbcType=INTEGER},
+            </if>
+            <if test="credit!=null">
+                credit = #{credit},
+            </if>
+            <if test="expireTime!=null">
+                expire_time = #{expireTime},
+            </if>
+            modified = now(),
+            <if test="modifier != null and modifier != ''">
+                modifier = #{modifier,jdbcType=VARCHAR}
+            </if>
+        </set>
+        <where>
+            <if test="id != null">
+                id = #{id,jdbcType=BIGINT}
+            </if>
+            <if test="userId != null">
+                and user_id = #{userId,jdbcType=BIGINT}
+            </if>
+            and
+            yn = 1
+        </where>
+    </update>
+
+
+
+</mapper>

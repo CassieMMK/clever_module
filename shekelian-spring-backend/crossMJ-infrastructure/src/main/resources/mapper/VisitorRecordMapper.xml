@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.avalon.jpcap.infrastructure.mapper.VisitorRecordMapper">
+    <resultMap id="resultMap" type="com.avalon.jpcap.repository.po.VisitorPO">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="province" property="province" jdbcType="VARCHAR"/>
+        <result column="province_visit_count_each_day" property="provinceVisitCountEachDay" jdbcType="INTEGER"/>
+        <result column="visit_date" property="visitDay" jdbcType="DATE"/>
+        <result column="ext_json" property="extJson" jdbcType="DATE"/>
+        <result column="created" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="modified" property="modifiedTime" jdbcType="TIMESTAMP"/>
+        <result column="creator" property="creator" jdbcType="VARCHAR"/>
+        <result column="modifier" property="modifier" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List" >
+        id, province, province_visit_count_each_day, visit_date,
+            ext_json, created, modified, creator, modifier
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        insert into visitor_record (province, province_visit_count_each_day, visit_date,
+                                         ext_json, created, modified, creator, modifier)
+        values (#{province},#{provinceVisitCountEachDay}, #{visitDay},
+                #{extJson}, now(), now(), #{creator}, #{modifier})
+    </insert>
+
+    <select id="selectById" resultMap="resultMap">
+        select <include refid="Base_Column_List"/>
+        from visitor_record
+        <where>
+            id = #{id,jdbcType=BIGINT}
+            and
+            yn = 1
+        </where>
+    </select>
+
+    <select id="selectList" resultMap="resultMap">
+        select <include refid="Base_Column_List"/>
+        from visitor_record
+        <where>
+            <if test="province!=null and province!= ''">
+                and province = #{province}
+            </if>
+            <if test="visitDayStart!=null">
+                and visit_date &gt;= #{visitDayStart}
+            </if>
+            <if test="visitDayEnd!=null">
+                and visit_date &lt;= #{visitDayEnd}
+            </if>
+            and
+            yn = 1
+        </where>
+    </select>
+
+    <update id="updateById">
+        update visitor_record
+        <set>
+            <if test="provinceVisitCountEachDay != null">
+                province_visit_count_each_day = #{provinceVisitCountEachDay,jdbcType=INTEGER},
+            </if>
+            modified = now(),
+            <if test="modifier != null and modifier != ''">
+                modifier = #{modifier,jdbcType=VARCHAR}
+            </if>
+        </set>
+        <where>
+            id = #{id}
+            and
+            yn = 1
+        </where>
+    </update>
+
+
+</mapper>
